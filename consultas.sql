@@ -401,98 +401,192 @@ Consultas de 60 a 80
 1. Listar los nombres de los clientes que tienen asignado el representante Lorena Pauxton
 (suponiendo que no puede haber representantes con el mismo nombre).
 
-
+SELECT c.nombre_cliente, e.nombre AS 'nombre_rep', e.apellido1 AS 'apellido_rep' FROM cliente c JOIN empleado e 
+ON c.codigo_empleado_rep_ventas = e.codigo_empleado WHERE e.nombre = 'Lorena' AND e.apellido1 ='Paxton';
 
 2. Devuelve un listado indicando todas las ciudades donde hay oficinas y el número de empleados
 que tiene.
 
-
+SELECT o.ciudad, e.nombre AS 'nombre_empleado', e.apellido1 AS 'apellido_empleado' FROM oficina o JOIN  empleado e ON e.codigo_oficina = o.codigo_oficina;
 
 3. Listar a los vendedores que no trabajan en oficinas dirigidas por el empleado 108.
 
-
+SELECT nombre, apellido1 FROM empleado WHERE codigo_jefe != 108;
 
 4. Listar los productos (idfab, idproducto y descripción) para los cuales no se ha recibido ningún
 pedido de 25000 o más.
 
+SELECT p.codigo_producto, p.nombre, p.descripcion FROM producto p  WHERE p.codigo_producto NOT IN (SELECT dp.codigo_producto FROM detalle_pedido dp WHERE dp.precio_unidad * dp.cantidad >= 25000);
 
+5. Listar los clientes asignados a Ana Bustamante que no han remitido un pedido superior a 3000 pts.
 
-5. Listar los clientes asignados a Ana Bustamante que no han remitido un pedido superior a 3000
-pts.
-
+SELECT c.nombre_cliente
+FROM cliente c
+JOIN empleado e ON c.codigo_empleado_rep_ventas = e.codigo_empleado
+WHERE e.nombre = 'Ana' AND e.apellido1 = 'Bustamante'
+AND c.codigo_cliente NOT IN (
+    SELECT codigo_cliente
+    FROM pedido
+    WHERE codigo_pedido IN (
+        SELECT codigo_pedido
+        FROM detalle_pedido
+        WHERE precio_unidad * cantidad > 3000
+    )
+);
 
 
 6. Devuelve el nombre del cliente, el nombre y primer apellido de su representante de ventas y el
 número de teléfono de la oficina del representante de ventas, de aquellos clientes que no
 hayan realizado ningún pago.
 
+SELECT c.nombre_cliente, e.nombre AS nombre_rep, e.apellido1 AS apellido_rep, o.telefono
+FROM cliente c
+JOIN empleado e ON c.codigo_empleado_rep_ventas = e.codigo_empleado
+JOIN oficina o ON e.codigo_oficina = o.codigo_oficina
+WHERE c.codigo_cliente NOT IN (
+    SELECT codigo_cliente
+    FROM pago
+);
 
 
 7. Devuelve el listado de clientes donde aparezca el nombre del cliente, el nombre y primer
 apellido de su representante de ventas y la ciudad donde está su oficina.
 
+SELECT c.nombre_cliente, e.nombre AS nombre_rep, e.apellido1 AS apellido_rep, o.ciudad
+FROM cliente c
+JOIN empleado e ON c.codigo_empleado_rep_ventas = e.codigo_empleado
+JOIN oficina o ON e.codigo_oficina = o.codigo_oficina;
 
 
 8. Devuelve el nombre, apellidos, puesto y teléfono de la oficina de aquellos empleados que no
 sean representante de ventas de ningún cliente.
 
+SELECT e.nombre, e.apellido1, e.puesto, o.telefono
+FROM empleado e
+JOIN oficina o ON e.codigo_oficina = o.codigo_oficina
+WHERE e.codigo_empleado NOT IN (
+    SELECT codigo_empleado_rep_ventas
+    FROM cliente
+);
 
 
 9. Devuelve el nombre, los apellidos y el email de los empleados que están a cargo de Alberto
 Soria.
 
+SELECT e.nombre, e.apellido1, e.email
+FROM empleado e
+WHERE e.codigo_jefe = (
+    SELECT codigo_empleado
+    FROM empleado
+    WHERE nombre = 'Alberto' AND apellido1 = 'Soria'
+);
 
 
 10. Devuelve el nombre del cliente con mayor límite de crédito. (utilizar ALL, ANY)
 
+SELECT nombre_cliente
+FROM cliente
+WHERE limite_credito >= ALL (SELECT limite_credito FROM cliente);
 
 
 11. Devuelve el nombre del producto que tenga el precio de venta más caro. (utilizar ALL, ANY)
 
+SELECT nombre
+FROM producto
+WHERE precio_venta >= ALL (SELECT precio_venta FROM producto);
 
 
 12. Devuelve el producto que menos unidades tiene en stock. (utilizar ALL, ANY)
 
+SELECT nombre
+FROM producto
+WHERE cantidad_en_stock <= ALL (SELECT cantidad_en_stock FROM producto);
 
 
 13. Devuelve el nombre, apellido1 y cargo de los empleados que no representan a ningún cliente.
 (Utilizar IN, NOT IN)
 
+SELECT nombre, apellido1, puesto
+FROM empleado
+WHERE codigo_empleado NOT IN (SELECT codigo_empleado_rep_ventas FROM cliente);
 
 
 14. Devuelve un listado que muestre solamente a los 
 clientes que no han realizado ningún pago.
 (Utilizar IN, NOT IN)
 
+SELECT nombre_cliente
+FROM cliente
+WHERE codigo_cliente NOT IN (SELECT codigo_cliente FROM pago);
 
 
 15. Devuelve un listado que muestre solamente a los clientes que sí han realizado algún pago.
 (Utilizar IN, NOT IN)
+
+
+SELECT nombre_cliente
+FROM cliente
+WHERE codigo_cliente IN (SELECT codigo_cliente FROM pago);
+
+
 16. Devuelve un listado de los productos que nunca han aparecido en un pedido. (Utilizar IN, NOT
 IN)
 
+SELECT nombre
+FROM producto
+WHERE codigo_producto NOT IN (SELECT codigo_producto FROM detalle_pedido);
 
 
 17. Devuelve el nombre, apellidos, puesto y teléfono de la oficina de aquellos empleados que no
 sean representante de ventas de ningún cliente.(Utilizar IN, NOT IN)
 
+SELECT e.nombre, e.apellido1, e.puesto, o.telefono
+FROM empleado e
+JOIN oficina o ON e.codigo_oficina = o.codigo_oficina
+WHERE e.codigo_empleado NOT IN (SELECT codigo_empleado_rep_ventas FROM cliente);
 
 
 18. Devuelve un listado que muestre solamente a los clientes que no han realizado ningún pago.
 (Utilizar EXISTS y NOT EXISTS)
 
+SELECT nombre_cliente
+FROM cliente c
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM pago p
+    WHERE p.codigo_cliente = c.codigo_cliente
+);
 
 
 19. Devuelve un listado que muestre solamente a los clientes que sí han realizado algún pago.
 (Utilizar EXISTS y NOT EXISTS)
 
+SELECT nombre_cliente
+FROM cliente c
+WHERE EXISTS (
+    SELECT 1
+    FROM pago p
+    WHERE p.codigo_cliente = c.codigo_cliente
+);
 
 
 20. Devuelve un listado de los productos que nunca han aparecido en un pedido. (Utilizar EXISTS y
 NOT EXISTS)
+SELECT nombre
+FROM producto p
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM detalle_pedido dp
+    WHERE dp.codigo_producto = p.codigo_producto
+);
 
 
 21. Devuelve el nombre de los clientes que hayan hecho pedidos en 2008 ordenados
 alfabéticamente de menor a mayor.
 
+SELECT c.nombre_cliente
+FROM cliente c
+JOIN pedido p ON c.codigo_cliente = p.codigo_cliente
+WHERE YEAR(p.fecha_pedido) = 2008
+ORDER BY c.nombre_cliente ASC;
 
