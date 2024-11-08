@@ -240,3 +240,259 @@ SELECT AVG(total)AS forma  FROM pago WHERE fecha_pago =2009;
 número de pedidos.
 
 SELECT estado, COUNT(*) AS cantidad_pedidos FROM pedido GROUP BY estado ORDER BY cantidad_pedidos DESC;
+
+Consultas De 40-60
+
+1. Calcula el precio de venta del producto más caro y más barato en una misma consulta.
+
+SELECT MAX(precio_venta) AS precio_mas_caro,MIN(precio_venta) AS precio_mas_barato FROM producto;
+
+2. Calcula el número de clientes que tiene la empresa.
+
+SELECT COUNT(*)AS cantidad_clientes FROM cliente;
+
+3. ¿Cuántos clientes tiene la ciudad de Madrid?
+
+SELECT COUNT(*)AS clientes_madrid FROM cliente WHERE ciudad = 'Madrid';
+
+4. ¿Calcula cuántos clientes tiene cada una de las ciudades que empiezan por M?
+
+SELECT ciudad, COUNT(*)AS numero_clientes FROM cliente WHERE ciudad LIKE 'M%' GROUP BY ciudad;
+
+5. Devuelve el nombre de los representantes de ventas y el número de clientes al que atiende
+cada uno.
+
+SELECT e.nombre, e.apellido1, COUNT(c.codigo_cliente) AS numero_clientes FROM empleado e JOIN cliente c ON e.codigo_empleado = c.codigo_empleado_rep_ventas GROUP BY e.codigo_empleado;
+
+
+6. Calcula el número de clientes que no tiene asignado representante de ventas.
+
+SELECT COUNT(*)AS clientes_sin_rep_ventas FROM cliente WHERE codigo_empleado_rep_ventas IS NULL;
+
+7. Calcula la fecha del primer y último pago realizado por cada uno de los clientes. El listado
+deberá mostrar el nombre y los apellidos de cada cliente.
+
+SELECT c.nombre_cliente, c.apellido_contacto, MIN(p.fecha_pago) AS primer_pago, MAX(p.fecha_pago) AS ultimo_pago FROM cliente c JOIN pago p ON c.codigo_cliente = p.codigo_cliente GROUP BY c.codigo_cliente;
+
+
+8. Calcula el número de productos diferentes que hay en cada uno de los pedidos.
+
+SELECT codigo_pedido, COUNT(DISTINCT codigo_producto) AS productos_diferentes FROM detalle_pedido GROUP BY codigo_pedido;
+
+
+9. Calcula la suma de la cantidad total de todos los productos que aparecen en cada uno de los
+pedidos.
+
+SELECT codigo_pedido, SUM(cantidad) AS cantidad_total FROM detalle_pedido GROUP BY codigo_pedido;
+
+
+10. Devuelve un listado de los 20 productos más vendidos y el número total de unidades que se
+han vendido de cada uno. El listado deberá estar ordenado por el número total de unidades
+vendidas.
+
+SELECT p.nombre, SUM(dp.cantidad) AS total_unidades_vendidas
+FROM producto p
+JOIN detalle_pedido dp ON p.codigo_producto = dp.codigo_producto GROUP BY p.codigo_producto ORDER BY total_unidades_vendidas DESC LIMIT 20;
+
+
+
+11. La facturación que ha tenido la empresa en toda la historia, indicando la base imponible, el IVA
+y el total facturado. La base imponible se calcula sumando el coste del producto por el número
+de unidades vendidas de la tabla detalle_pedido. El IVA es el 21 % de la base imponible, y el
+total la suma de los dos campos anteriores.
+
+SELECT SUM(dp.precio_unidad * dp.cantidad) AS base_imponible,
+       SUM(dp.precio_unidad * dp.cantidad) * 0.21 AS iva,
+       SUM(dp.precio_unidad * dp.cantidad) * 1.21 AS total_facturado
+FROM detalle_pedido dp;
+
+
+12. La misma información que en la pregunta anterior, pero agrupada por código de producto.
+
+SELECT dp.codigo_producto,
+       SUM(dp.precio_unidad * dp.cantidad) AS base_imponible,
+       SUM(dp.precio_unidad * dp.cantidad) * 0.21 AS iva,
+       SUM(dp.precio_unidad * dp.cantidad) * 1.21 AS total_facturado
+FROM detalle_pedido dp
+GROUP BY dp.codigo_producto;
+
+
+13. La misma información que en la pregunta anterior, pero agrupada por código de producto
+filtrada por los códigos que empiecen por OR.
+
+SELECT dp.codigo_producto,
+       SUM(dp.precio_unidad * dp.cantidad) AS base_imponible,
+       SUM(dp.precio_unidad * dp.cantidad) * 0.21 AS iva,
+       SUM(dp.precio_unidad * dp.cantidad) * 1.21 AS total_facturado
+FROM detalle_pedido dp
+WHERE dp.codigo_producto LIKE 'OR%'
+GROUP BY dp.codigo_producto;
+
+
+14. Lista las ventas totales de los productos que hayan facturado más de 3000 euros. Se mostrará
+el nombre, unidades vendidas, total facturado y total facturado con impuestos (21% IVA).
+
+SELECT p.nombre, SUM(dp.cantidad) AS unidades_vendidas,
+       SUM(dp.precio_unidad * dp.cantidad) AS total_facturado,
+       SUM(dp.precio_unidad * dp.cantidad) * 1.21 AS total_facturado_con_iva
+FROM producto p
+JOIN detalle_pedido dp ON p.codigo_producto = dp.codigo_producto
+GROUP BY p.codigo_producto
+HAVING total_facturado > 3000;
+
+
+15. Devuelve el nombre del cliente con mayor límite de crédito.
+
+SELECT nombre_cliente, limite_credito
+FROM cliente
+ORDER BY limite_credito DESC
+LIMIT 1;
+
+
+16. Devuelve el nombre del producto que tenga el precio de venta más caro.
+
+SELECT nombre, precio_venta
+FROM producto
+ORDER BY precio_venta DESC
+LIMIT 1;
+
+
+17. Devuelve el nombre del producto del que se han vendido más unidades. (Tenga en cuenta que
+tendrá que calcular cuál es el número total de unidades que se han vendido de cada producto a
+partir de los datos de la tabla detalle_pedido. Una vez que sepa cuál es el código del producto,
+puede obtener su nombre fácilmente.)
+
+SELECT p.nombre, SUM(dp.cantidad) AS total_unidades_vendidas
+FROM producto p
+JOIN detalle_pedido dp ON p.codigo_producto = dp.codigo_producto
+GROUP BY p.codigo_producto
+ORDER BY total_unidades_vendidas DESC
+LIMIT 1;
+
+
+18. Los clientes cuyo límite de crédito sea mayor que los pagos que haya realizado. (Sin
+utilizar INNER JOIN).
+
+SELECT c.codigo_cliente, c.nombre_cliente
+FROM cliente c WHERE c.limite_credito > (SELECT COALESCE(SUM(p.total), 0) FROM pago p WHERE p.codigo_cliente = c.codigo_cliente);
+
+SELECT nombre_cliente, COALESCE(limite_credito, 0) AS limite_credito
+FROM cliente;
+
+
+19. Devuelve el producto que más unidades tiene en stock.
+
+SELECT nombre, cantidad_en_stock
+FROM producto
+ORDER BY cantidad_en_stock DESC
+LIMIT 1;
+
+
+20. Devuelve el producto que menos unidades tiene en stock.
+
+SELECT nombre, cantidad_en_stock
+FROM producto
+ORDER BY cantidad_en_stock ASC
+LIMIT 1;
+
+
+Consultas de 60 a 80
+
+1. Listar los nombres de los clientes que tienen asignado el representante Lorena Pauxton
+(suponiendo que no puede haber representantes con el mismo nombre).
+
+
+
+2. Devuelve un listado indicando todas las ciudades donde hay oficinas y el número de empleados
+que tiene.
+
+
+
+3. Listar a los vendedores que no trabajan en oficinas dirigidas por el empleado 108.
+
+
+
+4. Listar los productos (idfab, idproducto y descripción) para los cuales no se ha recibido ningún
+pedido de 25000 o más.
+
+
+
+5. Listar los clientes asignados a Ana Bustamante que no han remitido un pedido superior a 3000
+pts.
+
+
+
+6. Devuelve el nombre del cliente, el nombre y primer apellido de su representante de ventas y el
+número de teléfono de la oficina del representante de ventas, de aquellos clientes que no
+hayan realizado ningún pago.
+
+
+
+7. Devuelve el listado de clientes donde aparezca el nombre del cliente, el nombre y primer
+apellido de su representante de ventas y la ciudad donde está su oficina.
+
+
+
+8. Devuelve el nombre, apellidos, puesto y teléfono de la oficina de aquellos empleados que no
+sean representante de ventas de ningún cliente.
+
+
+
+9. Devuelve el nombre, los apellidos y el email de los empleados que están a cargo de Alberto
+Soria.
+
+
+
+10. Devuelve el nombre del cliente con mayor límite de crédito. (utilizar ALL, ANY)
+
+
+
+11. Devuelve el nombre del producto que tenga el precio de venta más caro. (utilizar ALL, ANY)
+
+
+
+12. Devuelve el producto que menos unidades tiene en stock. (utilizar ALL, ANY)
+
+
+
+13. Devuelve el nombre, apellido1 y cargo de los empleados que no representan a ningún cliente.
+(Utilizar IN, NOT IN)
+
+
+
+14. Devuelve un listado que muestre solamente a los 
+clientes que no han realizado ningún pago.
+(Utilizar IN, NOT IN)
+
+
+
+15. Devuelve un listado que muestre solamente a los clientes que sí han realizado algún pago.
+(Utilizar IN, NOT IN)
+16. Devuelve un listado de los productos que nunca han aparecido en un pedido. (Utilizar IN, NOT
+IN)
+
+
+
+17. Devuelve el nombre, apellidos, puesto y teléfono de la oficina de aquellos empleados que no
+sean representante de ventas de ningún cliente.(Utilizar IN, NOT IN)
+
+
+
+18. Devuelve un listado que muestre solamente a los clientes que no han realizado ningún pago.
+(Utilizar EXISTS y NOT EXISTS)
+
+
+
+19. Devuelve un listado que muestre solamente a los clientes que sí han realizado algún pago.
+(Utilizar EXISTS y NOT EXISTS)
+
+
+
+20. Devuelve un listado de los productos que nunca han aparecido en un pedido. (Utilizar EXISTS y
+NOT EXISTS)
+
+
+21. Devuelve el nombre de los clientes que hayan hecho pedidos en 2008 ordenados
+alfabéticamente de menor a mayor.
+
+
